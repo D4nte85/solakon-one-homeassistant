@@ -155,7 +155,7 @@
         "name": "Batterie Entladeenergie"
       },
       "bms1_ambient_temp": {
-        "name": "Umgebungstemperatur"
+        "name": "BMS-Temperatur"
       },
       "bms1_design_energy": {
         "name": "Batteriekapazität"
@@ -216,10 +216,10 @@
         }
       },
       "grid_total_export_energy": {
-        "name": "Netz Exportenergie"
+        "name": "AC-Ausgangsenergie"
       },
       "grid_total_import_energy": {
-        "name": "Netz Importenergie"
+        "name": "AC-Eingangsenergie"
       },
       "internal_temp": {
         "name": "Wechselrichter Temperatur"
@@ -328,22 +328,11 @@
         }
       },
       "remote_timeout_countdown": {
-        "name": "Fernsteuerung Zeitüberschreitung"
+        "name": "Fernsteuerung Restzeit"
       },
       "total_pv_power": {
         "name": "PV Leistung"
       }
-    }
-  },
-  "exceptions": {
-    "discharge_power_limit_exceeded": {
-      "message": "{value} W wurde nicht gesetzt, da der Wert außerhalb des erlaubten Bereichs von {min} W bis {max} W liegt. Die Entladeleistung des Geräts ist auf {max} W begrenzt."
-    },
-    "discharge_setpoint_unknown": {
-      "message": "Entladen wurde nicht aktiviert, da der aktuelle Wert von {key} nicht vom Gerät gelesen werden konnte und die Begrenzung der Entladeleistung daher nicht geprüft werden konnte. Verbindung zum Gerät prüfen und erneut versuchen."
-    },
-    "discharge_setpoint_write_failed": {
-      "message": "Entladen wurde nicht aktiviert, da {key} nicht auf die maximale Entladeleistung von {max} W reduziert werden konnte. Verbindung zum Gerät prüfen und erneut versuchen."
     }
   },
   "options": {
