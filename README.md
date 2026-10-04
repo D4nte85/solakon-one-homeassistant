@@ -56,7 +56,7 @@ A complete Home Assistant custom integration for Solakon ONE devices using Modbu
 - Full UI configuration support
 - Configurable update intervals
 - Energy Dashboard compatible (solar production works out-of-the-box)
-- Battery integration via helper sensors
+- Battery integration works directly with native energy sensors
 
 ## Monitored Sensors
 
@@ -140,6 +140,18 @@ These sensors display the current values of controllable parameters:
    - **Modbus Device ID**: Usually 1 (range: 1-247)
    - **Update Interval**: How often to poll (1-300 seconds)
 
+### Changing the IP Address or Port
+
+If your Solakon ONE gets a new IP address, you do not need to delete and re-add
+the integration:
+
+1. Go to Settings → Devices & Services
+2. Find the **Solakon ONE** entry, click the three dots menu → **"Reconfigure"**
+3. Enter the new **Host**, **Port**, or **Modbus Device ID**
+4. Submit — Home Assistant verifies the device is reachable and reloads the integration
+
+All entities keep their entity IDs, custom names, and recorded history.
+
 ### Network Requirements
 
 - Ensure your Solakon ONE device is connected to your network
@@ -174,20 +186,49 @@ The integration provides control entities to manage your Solakon ONE device dire
 ### Number Entities
 
 **Battery SoC Management**
-- `Minimum SoC Control`: Set minimum battery state of charge (0-100%)
-- `Maximum SoC Control`: Set maximum battery state of charge (0-100%)
-- `Minimum SoC OnGrid Control`: Set minimum SoC when grid-connected (0-100%)
+- `Minimum state of charge`: Set minimum battery state of charge (0-100%)
+- `Maximum state of charge`: Set maximum battery state of charge (0-100%)
+- `Minimum state of charge (on-grid)`: Set minimum SoC when grid-connected (0-100%)
 
 **Remote Power Control**
-- `Remote Active Power Control`: Set active power command (-100000W to +800W)
+- `Remote control power`: Set active power command (-100kW to +100kW)
   - Negative values = charging/import
   - Positive values = discharging/export
-- `Remote Reactive Power Control`: Set reactive power command (-100kVAR to +100kVAR, -800 to +800 while a discharge mode is active)
-- `Remote Timeout Control`: Set timeout for remote control commands (0-3600 seconds)
-- `Force mode power`: Power for force charge (up to 1200W) or force discharge (up to 800W)
-- `Grid export power limit`: Maximum power that is exported to the grid (0-800W)
+- `Remote control reactive power`: Set reactive power command (-100kVAR to +100kVAR)
+- `Remote control timeout`: Set timeout for remote control commands (0-3600 seconds). The sensor `Remote timeout countdown` shows the remaining time.
+- `Force mode power`: Power for force charge or force discharge (0-1200W)
+- `Grid export power limit`: Maximum power that is exported to the grid (0-1200W)
 
-> ⚠️ **Discharge limit**: The integration does not accept discharge settings above 800W. Values above 800W are rejected for the grid export power limit, for force mode power while discharging and for the remote power setpoints while a discharge mode is active. When a discharge mode is selected, the device is read first and remote power setpoints above 800W that are left over from charging are lowered to 800W before the mode is enabled. Charging up to 1200W is not affected. Values that are already stored on the device, or that are changed outside of Home Assistant (e.g. in the Solakon app), are not corrected.
+### Remote Control: Order of Steps
+
+Remote control only stays active while a timeout above 0 is set. Set the entities in this order:
+
+1. `Remote control timeout` to a value above 0, e.g. 60 seconds. With a timeout of 0 the device switches the mode back to `Disabled` right away.
+2. `Remote control mode` to the desired mode.
+3. `Remote control power` to the desired power. A power value written before the mode and timeout are set is reset to 0.
+
+Example: discharge 200W with PV priority.
+
+```yaml
+actions:
+  - action: number.set_value
+    target:
+      entity_id: number.solakon_one_remote_control_timeout
+    data:
+      value: 60
+  - action: select.select_option
+    target:
+      entity_id: select.solakon_one_remote_control_mode
+    data:
+      option: "1"
+  - action: number.set_value
+    target:
+      entity_id: number.solakon_one_remote_control_power
+    data:
+      value: 200
+```
+
+If Home Assistant runs in German, the entity IDs are German, e.g. `number.solakon_one_fernsteuerung_zeituberschreitung`. See [Entity Names (English / German)](#entity-names-english--german).
 
 > ⚠️ **Warning**: Modifying these settings can affect your system's operation. Make sure you understand what each setting does before changing it. Some settings may require the device to be in specific modes to take effect.
 
@@ -212,7 +253,7 @@ The integration provides control entities to manage your Solakon ONE device dire
 
 ### Common Issues
 
-- **Cannot connect**: Verify IP address and port are correct
+- **Cannot connect**: Verify IP address and port are correct — if the device's IP changed, use *Reconfigure* (see [Changing the IP Address or Port](#changing-the-ip-address-or-port))
 - **No data**: Check Modbus device ID (usually 1)
 - **Intermittent data**: Increase update interval if network is slow
 - **Missing sensors**: Some sensors only appear if hardware is present (e.g., battery sensors)
@@ -226,11 +267,19 @@ To add solar production to your Energy Dashboard:
 1. Go to Settings → Dashboards → Energy
 2. Under **Solar production**, select "PV Energy" and "PV Power"
 
-### Battery Integration (Requires Setup)
+### Battery Integration (Works Directly)
 
-The battery sensors need to be configured as helpers before they can be used in the Energy Dashboard. Follow these steps:
+The integration provides native `Battery charge energy` and `Battery discharge energy` sensors, so no helpers are needed for the Energy Dashboard:
 
-#### Create Template Sensors for Battery Power Split
+1. Go to Settings → Dashboards → Energy
+2. Under **Battery systems**, click "Add battery system".
+3. Configure:
+   - **Energy going in to the battery**: Select the `Battery charge energy` sensor.
+   - **Energy going out of the battery**: Select the `Battery discharge energy` sensor.
+
+#### Optional: Real Time Power Display
+
+If you also want live power values on the battery card, create two template power sensors first.
 
 Go to Settings → Devices & Services → Helpers → Create Helper → Template → Template a sensor
 
@@ -250,21 +299,15 @@ Create two template sensors with the following settings:
 - Device class: `Power`
 - State class: `Measurement`
 
-#### Add to Energy Dashboard
+#### Assign the Power Sensors
 
-1. Go to Settings → Dashboards → Energy
-2. Under **Battery systems**, click "Add battery system".
-3. Configure:
-   - **Energy going in to the battery**: Select the `Battery charge energy` sensor.
-   - **Energy going out of the battery**: Select the `Battery discharge energy` sensor.
-
-Optionally, you can also assign the power sensors created above for real time information:
+Back on the battery system card, you can assign the template sensors created above for real time information:
    - **Power going in to the battery**: Select the `Battery Charge Power` template sensor.
    - **Power going out of the battery**: Select the `Battery Discharge Power` template sensor.
 
 ### Grid Import/Export (Not Currently Supported)
 
-Grid import and export sensors are not currently available in this integration. These values would need to be derived from the available power sensors or added in a future update if the Modbus registers support them.
+Grid import and export sensors are not currently available in this integration. The sensors `AC output energy` (register 39621) and `AC input energy` (register 39625) count the energy at the AC connection of the device, not at the grid connection of the house: output is everything the device delivered (PV and battery), input is everything it charged from AC. They are not suitable as grid import/export in the Energy Dashboard. Real grid values require a meter or CT.
 
 ### Solakon PowerTracker IR Integration
 
@@ -339,19 +382,93 @@ automation:
 
 Device control is implemented using Home Assistant entities (Select and Number entities). Use these entities in your dashboards and automations:
 
-**Available Control Entities:**
-- `select.solakon_one_eps_output_control`: EPS/UPS mode selection
+**Available Control Entities** (entity IDs with Home Assistant in English):
+- `select.solakon_one_output`: EPS/UPS mode selection
 - `select.solakon_one_remote_control_mode`: Remote control mode selection
-- `number.solakon_one_minimum_soc_control`: Minimum battery SoC
-- `number.solakon_one_maximum_soc_control`: Maximum battery SoC
-- `number.solakon_one_minimum_soc_ongrid_control`: Minimum SoC when grid-connected
-- `number.solakon_one_remote_active_power_control`: Active power command
-- `number.solakon_one_remote_reactive_power_control`: Reactive power command
-- `number.solakon_one_remote_timeout_control`: Remote control timeout
+- `select.solakon_one_force_mode`: Force mode selection
+- `number.solakon_one_minimum_state_of_charge`: Minimum battery SoC
+- `number.solakon_one_maximum_state_of_charge`: Maximum battery SoC
+- `number.solakon_one_minimum_state_of_charge_on_grid`: Minimum SoC when grid-connected
+- `number.solakon_one_remote_control_power`: Active power command
+- `number.solakon_one_remote_control_reactive_power`: Reactive power command
+- `number.solakon_one_remote_control_timeout`: Remote control timeout
+- `number.solakon_one_force_mode_power`: Force mode power
+- `number.solakon_one_force_mode_duration`: Force mode duration
+- `number.solakon_one_grid_export_power_limit`: Grid export power limit
 
 **Future Services (Planned):**
-- `solakon_one.refresh_data`: Manually refresh all sensor data
 - `solakon_one.set_time_of_use`: Configure TOU schedules
+
+## Entity Names (English / German)
+
+Home Assistant derives the entity ID from the device name and the entity name in the language that was active when the device was added. The table lists both variants for a device named `Solakon ONE`; a second device gets the suffix `_2`. Entity IDs of existing installations do not change when a name changes. Renamed so far: `Ambient temperature` → `BMS temperature`, `Grid export energy` → `AC output energy`, `Grid import energy` → `AC input energy`, and in German `Fernsteuerung Zeitüberschreitung` (sensor) → `Fernsteuerung Restzeit`; older installations keep IDs like `sensor.solakon_one_grid_export_energy`. Regenerate the table with `PYTHONPATH=. uv run python scripts/entity_table.py`.
+
+<!-- entity-table:start -->
+| Platform | Key | English entity ID | German entity ID |
+|---|---|---|---|
+| binary_sensor | `battery_charging` | `binary_sensor.solakon_one_charging` | `binary_sensor.solakon_one_ladestatus` |
+| binary_sensor | `grid_status` | `binary_sensor.solakon_one_grid` | `binary_sensor.solakon_one_netz` |
+| number | `battery_max_charge_current` | `number.solakon_one_maximum_charge_current` | `number.solakon_one_maximaler_ladestrom` |
+| number | `battery_max_discharge_current` | `number.solakon_one_maximum_discharge_current` | `number.solakon_one_maximaler_entladestrom` |
+| number | `grid_export_power_limit` | `number.solakon_one_grid_export_power_limit` | `number.solakon_one_netz_ausgangsleistungsgrenze` |
+| number | `maximum_soc` | `number.solakon_one_maximum_state_of_charge` | `number.solakon_one_maximaler_ladestand` |
+| number | `minimum_soc` | `number.solakon_one_minimum_state_of_charge` | `number.solakon_one_minimaler_ladestand` |
+| number | `minimum_soc_ongrid` | `number.solakon_one_minimum_state_of_charge_on_grid` | `number.solakon_one_minimaler_ladestand_netzbetrieb` |
+| number | `remote_active_power` | `number.solakon_one_remote_control_power` | `number.solakon_one_fernsteuerung_leistung` |
+| number | `remote_reactive_power` | `number.solakon_one_remote_control_reactive_power` | `number.solakon_one_fernsteuerung_blindleistung` |
+| number | `remote_timeout_set` | `number.solakon_one_remote_control_timeout` | `number.solakon_one_fernsteuerung_zeituberschreitung` |
+| select | `eps_output` | `select.solakon_one_output` | `select.solakon_one_steckdose` |
+| sensor | `active_power` | `sensor.solakon_one_active_power` | `sensor.solakon_one_leistung` |
+| sensor | `battery1_current` | `sensor.solakon_one_battery_current` | `sensor.solakon_one_batterie_strom` |
+| sensor | `battery1_voltage` | `sensor.solakon_one_battery_voltage` | `sensor.solakon_one_batterie_spannung` |
+| sensor | `battery_power` | `sensor.solakon_one_battery_power` | `sensor.solakon_one_batterie_leistung` |
+| sensor | `battery_soc` | `sensor.solakon_one_battery_state_of_charge` | `sensor.solakon_one_batterie_ladestand` |
+| sensor | `battery_total_charge_energy` | `sensor.solakon_one_battery_charge_energy` | `sensor.solakon_one_batterie_ladeenergie` |
+| sensor | `battery_total_discharge_energy` | `sensor.solakon_one_battery_discharge_energy` | `sensor.solakon_one_batterie_entladeenergie` |
+| sensor | `bms1_ambient_temp` | `sensor.solakon_one_bms_temperature` | `sensor.solakon_one_bms_temperatur` |
+| sensor | `bms1_design_energy` | `sensor.solakon_one_battery_capacity` | `sensor.solakon_one_batteriekapazitat` |
+| sensor | `bms1_max_cell_voltage` | `sensor.solakon_one_battery_max_cell_voltage` | `sensor.solakon_one_batterie_max_zellspannung` |
+| sensor | `bms1_max_temp` | `sensor.solakon_one_battery_max_temperature` | `sensor.solakon_one_batterie_max_temperatur` |
+| sensor | `bms1_min_cell_voltage` | `sensor.solakon_one_battery_min_cell_voltage` | `sensor.solakon_one_batterie_min_zellspannung` |
+| sensor | `bms1_min_temp` | `sensor.solakon_one_battery_min_temperature` | `sensor.solakon_one_batterie_min_temperatur` |
+| sensor | `bms1_soh` | `sensor.solakon_one_battery_state_of_health` | `sensor.solakon_one_batterie_gesundheitszustand` |
+| sensor | `bms1_version` | `sensor.solakon_one_bms_version` | `sensor.solakon_one_bms_version` |
+| sensor | `cumulative_generation` | `sensor.solakon_one_total_energy` | `sensor.solakon_one_energie` |
+| sensor | `daily_generation` | `sensor.solakon_one_daily_energy` | `sensor.solakon_one_tagliche_energie` |
+| sensor | `eps_current` | `sensor.solakon_one_eps_current` | `sensor.solakon_one_steckdose_strom` |
+| sensor | `eps_power` | `sensor.solakon_one_eps_power` | `sensor.solakon_one_steckdose_leistung` |
+| sensor | `eps_voltage` | `sensor.solakon_one_eps_voltage` | `sensor.solakon_one_steckdose_spannung` |
+| sensor | `grid_frequency` | `sensor.solakon_one_grid_frequency` | `sensor.solakon_one_netzfrequenz` |
+| sensor | `grid_r_voltage` | `sensor.solakon_one_grid_voltage` | `sensor.solakon_one_netzspannung` |
+| sensor | `grid_standard_code` | `sensor.solakon_one_grid_standard` | `sensor.solakon_one_netzstandard` |
+| sensor | `grid_total_export_energy` | `sensor.solakon_one_ac_output_energy` | `sensor.solakon_one_ac_ausgangsenergie` |
+| sensor | `grid_total_import_energy` | `sensor.solakon_one_ac_input_energy` | `sensor.solakon_one_ac_eingangsenergie` |
+| sensor | `internal_temp` | `sensor.solakon_one_inverter_temperature` | `sensor.solakon_one_wechselrichter_temperatur` |
+| sensor | `inverter_r_frequency` | `sensor.solakon_one_inverter_frequency` | `sensor.solakon_one_wechselrichter_frequenz` |
+| sensor | `inverter_version` | `sensor.solakon_one_inverter_version` | `sensor.solakon_one_wechselrichter_version` |
+| sensor | `max_active_power` | `sensor.solakon_one_grid_maximum_export_power_limit` | `sensor.solakon_one_netz_maximale_ausgangsleistungsgrenze` |
+| sensor | `network_status` | `sensor.solakon_one_network` | `sensor.solakon_one_netzwerk` |
+| sensor | `operating_mode` | `sensor.solakon_one_operating_mode` | `sensor.solakon_one_betriebsart` |
+| sensor | `power_factor` | `sensor.solakon_one_power_factor` | `sensor.solakon_one_leistungsfaktor` |
+| sensor | `pv1_current` | `sensor.solakon_one_string_1_current` | `sensor.solakon_one_string_1_strom` |
+| sensor | `pv1_power` | `sensor.solakon_one_string_1_power` | `sensor.solakon_one_string_1_leistung` |
+| sensor | `pv1_voltage` | `sensor.solakon_one_string_1_voltage` | `sensor.solakon_one_string_1_spannung` |
+| sensor | `pv2_current` | `sensor.solakon_one_string_2_current` | `sensor.solakon_one_string_2_strom` |
+| sensor | `pv2_power` | `sensor.solakon_one_string_2_power` | `sensor.solakon_one_string_2_leistung` |
+| sensor | `pv2_voltage` | `sensor.solakon_one_string_2_voltage` | `sensor.solakon_one_string_2_spannung` |
+| sensor | `pv3_current` | `sensor.solakon_one_string_3_current` | `sensor.solakon_one_string_3_strom` |
+| sensor | `pv3_power` | `sensor.solakon_one_string_3_power` | `sensor.solakon_one_string_3_leistung` |
+| sensor | `pv3_voltage` | `sensor.solakon_one_string_3_voltage` | `sensor.solakon_one_string_3_spannung` |
+| sensor | `pv4_current` | `sensor.solakon_one_string_4_current` | `sensor.solakon_one_string_4_strom` |
+| sensor | `pv4_power` | `sensor.solakon_one_string_4_power` | `sensor.solakon_one_string_4_leistung` |
+| sensor | `pv4_voltage` | `sensor.solakon_one_string_4_voltage` | `sensor.solakon_one_string_4_spannung` |
+| sensor | `pv_total_energy` | `sensor.solakon_one_pv_energy` | `sensor.solakon_one_pv_energie` |
+| sensor | `pv_version` | `sensor.solakon_one_pv_version` | `sensor.solakon_one_pv_version` |
+| sensor | `reactive_power` | `sensor.solakon_one_reactive_power` | `sensor.solakon_one_blindleistung` |
+| sensor | `remote_control` | `sensor.solakon_one_remote_control` | `sensor.solakon_one_fernsteuerung` |
+| sensor | `remote_timeout_countdown` | `sensor.solakon_one_remote_timeout_countdown` | `sensor.solakon_one_fernsteuerung_restzeit` |
+| sensor | `total_pv_power` | `sensor.solakon_one_pv_power` | `sensor.solakon_one_pv_leistung` |
+<!-- entity-table:end -->
 
 ## Support
 
