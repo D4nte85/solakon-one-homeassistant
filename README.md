@@ -84,8 +84,8 @@ All counters are seen from the Solakon ONE, not from your house:
 - **PV energy**: energy produced by the solar modules connected to the ONE
 - **Battery charge energy**: energy that went into the battery (from PV or from the AC side)
 - **Battery discharge energy**: energy that came out of the battery
-- **Grid export energy**: energy the ONE delivered on its AC side (into the house, and from there possibly into the grid)
-- **Grid import energy**: energy the ONE drew from its AC side, e.g. to charge the battery from the grid
+- **AC output energy**: energy the ONE delivered on its AC side (into the house, and from there possibly into the grid)
+- **AC input energy**: energy the ONE drew from its AC side, e.g. to charge the battery from the grid
 - **Total energy generated** / **Daily energy**: inverter generation counters
 
 These are not your household's grid import and export. For those you need a meter, see
@@ -95,7 +95,7 @@ The lifetime counters never decrease: a single reading lower than the previous o
 after a Modbus timeout or a firmware update) is ignored, so it can't cause spikes in the
 Energy Dashboard.
 
-Daily counters (PV, battery charge/discharge, grid export/import today) are disabled by
+Daily counters (PV, battery charge/discharge, AC output/input today) are disabled by
 default. The device resets them at its own day boundary, which may not match your Home
 Assistant time zone. If you need daily values in your time zone, use a
 [Utility Meter](https://www.home-assistant.io/integrations/utility_meter/) on the
@@ -529,7 +529,7 @@ Device control is implemented using Home Assistant entities (Select and Number e
 
 ## Entity Names (English / German)
 
-Home Assistant derives the entity ID from the device name and the entity name in the language that was active when the device was added. The table lists both variants for a device named `Solakon ONE`; a second device gets the suffix `_2`. Entity IDs of existing installations do not change when a name changes. Renamed so far: `Ambient temperature` → `BMS temperature`, `Grid export energy` → `AC output energy`, `Grid import energy` → `AC input energy`, and in German `Fernsteuerung Zeitüberschreitung` (sensor) → `Fernsteuerung Restzeit`; older installations keep IDs like `sensor.solakon_one_grid_export_energy`. Regenerate the table with `PYTHONPATH=. uv run python scripts/entity_table.py`.
+Home Assistant derives the entity ID from the device name and the entity name in the language that was active when the device was added. The table lists both variants for a device named `Solakon ONE`; a second device gets the suffix `_2`. Entity IDs of existing installations do not change when a name changes. Renamed so far: `Ambient temperature` → `BMS temperature`, `Grid export energy` → `AC output energy`, `Grid import energy` → `AC input energy`, `Grid export energy today` → `AC output energy today`, `Grid import energy today` → `AC input energy today`, and in German `Fernsteuerung Zeitüberschreitung` (sensor) → `Fernsteuerung Restzeit`; older installations keep IDs like `sensor.solakon_one_grid_export_energy`. Regenerate the table with `PYTHONPATH=. uv run python scripts/entity_table.py`.
 
 <!-- entity-table:start -->
 | Platform | Key | English entity ID | German entity ID |
@@ -573,8 +573,8 @@ Home Assistant derives the entity ID from the device name and the entity name in
 | sensor | `eps_frequency` | `sensor.solakon_one_eps_frequency` | `sensor.solakon_one_steckdose_frequenz` |
 | sensor | `eps_power` | `sensor.solakon_one_eps_power` | `sensor.solakon_one_steckdose_leistung` |
 | sensor | `eps_voltage` | `sensor.solakon_one_eps_voltage` | `sensor.solakon_one_steckdose_spannung` |
-| sensor | `grid_daily_export_energy` | `sensor.solakon_one_grid_export_energy_today` | `sensor.solakon_one_netz_exportenergie_heute` |
-| sensor | `grid_daily_import_energy` | `sensor.solakon_one_grid_import_energy_today` | `sensor.solakon_one_netz_importenergie_heute` |
+| sensor | `grid_daily_export_energy` | `sensor.solakon_one_ac_output_energy_today` | `sensor.solakon_one_ac_ausgangsenergie_heute` |
+| sensor | `grid_daily_import_energy` | `sensor.solakon_one_ac_input_energy_today` | `sensor.solakon_one_ac_eingangsenergie_heute` |
 | sensor | `grid_frequency` | `sensor.solakon_one_grid_frequency` | `sensor.solakon_one_netzfrequenz` |
 | sensor | `grid_r_voltage` | `sensor.solakon_one_grid_voltage` | `sensor.solakon_one_netzspannung` |
 | sensor | `grid_standard_code` | `sensor.solakon_one_grid_standard` | `sensor.solakon_one_netzstandard` |

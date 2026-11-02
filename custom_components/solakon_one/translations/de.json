@@ -197,10 +197,10 @@
         "name": "Steckdose Spannung"
       },
       "grid_daily_export_energy": {
-        "name": "Netz Exportenergie heute"
+        "name": "AC-Ausgangsenergie heute"
       },
       "grid_daily_import_energy": {
-        "name": "Netz Importenergie heute"
+        "name": "AC-Eingangsenergie heute"
       },
       "grid_frequency": {
         "name": "Netzfrequenz"

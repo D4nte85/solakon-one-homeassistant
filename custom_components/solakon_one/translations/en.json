@@ -197,10 +197,10 @@
         "name": "EPS voltage"
       },
       "grid_daily_export_energy": {
-        "name": "Grid export energy today"
+        "name": "AC output energy today"
       },
       "grid_daily_import_energy": {
-        "name": "Grid import energy today"
+        "name": "AC input energy today"
       },
       "grid_frequency": {
         "name": "Grid frequency"
