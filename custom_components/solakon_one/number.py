@@ -259,8 +259,7 @@ class SolakonNumber(SolakonEntity, NumberEntity):
     @property
     def available(self) -> bool:
         """Return if entity is available."""
-        # Entity is available if coordinator succeeded
-        return self.coordinator.last_update_success
+        return self.coordinator.last_update_success and self.native_value is not None
 
 
 class ForceDurationNumber(SolakonEntity, NumberEntity):
@@ -326,7 +325,7 @@ class ForceDurationNumber(SolakonEntity, NumberEntity):
     @property
     def available(self) -> bool:
         """Return if entity is available."""
-        return self.coordinator.last_update_success
+        return self.coordinator.last_update_success and self.native_value is not None
 
 
 class ForcePowerNumber(SolakonEntity, NumberEntity):
@@ -392,4 +391,4 @@ class ForcePowerNumber(SolakonEntity, NumberEntity):
     @property
     def available(self) -> bool:
         """Return if entity is available."""
-        return self.coordinator.last_update_success
+        return self.coordinator.last_update_success and self.native_value is not None
