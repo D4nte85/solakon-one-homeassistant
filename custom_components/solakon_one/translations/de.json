@@ -335,6 +335,17 @@
       }
     }
   },
+  "exceptions": {
+    "not_connected": {
+      "message": "{key} wurde nicht gesetzt, weil keine Verbindung zum Gerät besteht. Die Integration verbindet sich selbst neu; gleich erneut versuchen."
+    },
+    "value_out_of_range": {
+      "message": "{value} kann nicht nach {key} geschrieben werden, weil der Wert nicht in das Register passt."
+    },
+    "write_failed": {
+      "message": "{key} wurde nicht gesetzt, weil das Gerät den Schreibbefehl an Register {address} nicht angenommen hat. Verbindung zum Gerät und im Log die Modbus-Antwort prüfen."
+    }
+  },
   "options": {
     "step": {
       "init": {
