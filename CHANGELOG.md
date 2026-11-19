@@ -9,7 +9,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-Open upstream PRs #326, #327 and #328 on top of 1.8.0-anpassungen.2.
+## [1.8.0-anpassungen.3] – 2026-11-19
+
+Based on upstream 1.8.0, plus the open upstream PRs #326, #327 and #328.
 
 ### Changed
 - **Write errors reach the caller (#326):** A write that the device rejects, or that is attempted without a connection, makes the action (`number.set_value`, `select.select_option`) fail with a translated error instead of only logging `Failed to set …`. Automations without `continue_on_error` stop there. The log shows the register address and the Modbus response. All entities write through one path, `SolakonModbusHub.async_write_value`, which encodes the value from its register definition and rejects values that do not fit the register instead of clamping them (`modbus.py`, `number.py`, `select.py`, `translations/`).
