@@ -9,6 +9,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+Open upstream PRs #326, #327 and #328 on top of 1.8.0-anpassungen.2.
+
+### Changed
+- **Write errors reach the caller (#326):** A write that the device rejects, or that is attempted without a connection, makes the action (`number.set_value`, `select.select_option`) fail with a translated error instead of only logging `Failed to set …`. Automations without `continue_on_error` stop there. The log shows the register address and the Modbus response. All entities write through one path, `SolakonModbusHub.async_write_value`, which encodes the value from its register definition and rejects values that do not fit the register instead of clamping them (`modbus.py`, `number.py`, `select.py`, `translations/`).
+- **Read failures (#327):** A poll fails when none of the regular register batches could be read; before, the static values made every poll count as successful. Values read once per minute are dropped when their last successful read is older than 180 s. Number and select entities without a value are unavailable, like sensors (`modbus.py`, `exceptions.py`, `number.py`, `select.py`).
+
+### Fixed
+- **Connection after a failed setup (#328):** The Modbus client is closed before setup is retried; before, every retry left a client reconnecting in the background (`__init__.py`).
+- **Device info (#328):** Model and serial number come from the static registers instead of four extra reads during setup. Cleanup without behaviour change: bitfield type comparison, one `format_version` helper for the version sensors, `REMOTE_CONTROL_MODE_SELECT_ENTITY_DESCRIPTION` spelling, dead code removed.
+
 ## [1.8.0-anpassungen.2] – 2026-11-02
 
 Based on upstream 1.8.0.
