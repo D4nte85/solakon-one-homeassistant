@@ -26,7 +26,7 @@ from custom_components.solakon_one.number import (
 )
 from custom_components.solakon_one.select import (
     FORCE_MODE_SELECT_ENTITY_DESCRIPTION,
-    REMOTE_CONTROLL_MODE_SELECT_ENTITY_DESCRIPTION,
+    REMOTE_CONTROL_MODE_SELECT_ENTITY_DESCRIPTION,
     SELECT_ENTITY_DESCRIPTIONS,
     ForceModeSelect,
     RemoteControlModeSelect,
@@ -210,7 +210,7 @@ def _entry(data: dict) -> MagicMock:
         lambda e: ForcePowerNumber(e, {}, FORCE_POWER_NUMBER_ENTITY_DESCRIPTION),
         lambda e: SolakonSelect(e, {}, SELECT_ENTITY_DESCRIPTIONS[0]),
         lambda e: RemoteControlModeSelect(
-            e, {}, REMOTE_CONTROLL_MODE_SELECT_ENTITY_DESCRIPTION
+            e, {}, REMOTE_CONTROL_MODE_SELECT_ENTITY_DESCRIPTION
         ),
         lambda e: ForceModeSelect(e, {}, FORCE_MODE_SELECT_ENTITY_DESCRIPTION),
     ],
